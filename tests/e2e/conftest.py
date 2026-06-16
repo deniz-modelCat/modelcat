@@ -4,6 +4,7 @@ import pytest
 
 from tests.e2e.models.cli_runner import CLIRunner
 from tests.e2e.models.dataset_builder import DatasetBuilder
+from tests.e2e.models.fetch_dataset_builder import FetchDatasetBuilder
 
 REPO_ROOT = osp.abspath(osp.join(osp.dirname(__file__), "..", ".."))
 SAMPLE_DATASETS_DIR = osp.join(REPO_ROOT, "sample_datasets")
@@ -35,3 +36,9 @@ def detection_ds(tmp_path):
 def keypoints_ds(tmp_path):
     """Provides a mutable copy of the keypoints sample dataset."""
     return DatasetBuilder(KEYPOINTS_SAMPLE, str(tmp_path))
+
+
+@pytest.fixture
+def fetched_detection_ds(tmp_path):
+    """Provides a fetch-formatted detection dataset built without Roboflow API."""
+    return FetchDatasetBuilder(str(tmp_path)).build_detection_dataset()

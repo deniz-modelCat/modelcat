@@ -1,21 +1,22 @@
 import subprocess
 import sys
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from tests.e2e.models.cli_result import CLIResult
 
 
 class CLIRunner:
     """
-    Wraps subprocess invocation of modelcat_validate.
+    Wraps subprocess invocation of modelcat connector CLIs.
 
     Usage:
         runner = CLIRunner()
         result = runner.validate("/path/to/dataset")
-        result = runner.validate("/path/to/dataset", auto_fix=True, auto_fix_2="y", verbose=2)
+        result = runner.fetch("/path/to/save", url="https://universe.roboflow.com/...")
     """
 
-    COMMAND = "modelcat_validate"
+    VALIDATE_MODULE = "modelcat.connector.validate"
+    FETCH_MODULE = "modelcat.connector.fetch"
 
     def validate(
         self,
@@ -28,7 +29,7 @@ class CLIRunner:
         """
         Run modelcat_validate with the given options and return a parsed CLIResult.
         """
-        cmd = [sys.executable, "-m", "modelcat.connector.validate"]
+        cmd = [sys.executable, "-m", self.VALIDATE_MODULE]
         cmd.extend(["-d", dataset_path])
 
         if auto_fix:
@@ -53,11 +54,56 @@ class CLIRunner:
             stderr=proc.stderr,
         )
 
+    def fetch(
+        self,
+        save_path: str,
+        url: str,
+        env: Optional[Dict[str, str]] = None,
+        cwd: Optional[str] = None,
+    ) -> CLIResult:
+        """Run modelcat_fetch with the given save path and Roboflow URL."""
+        cmd = [sys.executable, "-m", self.FETCH_MODULE, save_path, "--url", url]
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            env=env,
+            cwd=cwd,
+        )
+        return CLIResult(
+            exit_code=proc.returncode,
+            stdout=proc.stdout,
+            stderr=proc.stderr,
+        )
+
+    def run_fetch_raw(
+        self,
+        args: List[str],
+        env: Optional[Dict[str, str]] = None,
+        cwd: Optional[str] = None,
+    ) -> CLIResult:
+        """Run modelcat_fetch with a raw argument list."""
+        cmd = [sys.executable, "-m", self.FETCH_MODULE] + args
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            env=env,
+            cwd=cwd,
+        )
+        return CLIResult(
+            exit_code=proc.returncode,
+            stdout=proc.stdout,
+            stderr=proc.stderr,
+        )
+
     def run_raw(self, args: List[str]) -> CLIResult:
         """
         Run modelcat_validate with raw argument list (for testing bad arg combos).
         """
-        cmd = [sys.executable, "-m", "modelcat.connector.validate"] + args
+        cmd = [sys.executable, "-m", self.VALIDATE_MODULE] + args
 
         proc = subprocess.run(
             cmd,
